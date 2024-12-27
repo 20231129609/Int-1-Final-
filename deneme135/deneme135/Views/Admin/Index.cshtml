@@ -1,0 +1,290 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Admin Paneli";
+}
+
+@model List<deneme135.Models.Exam>
+
+<link rel="stylesheet" href="~/css/admin.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
+
+<div class="admin-container">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <h1 class="admin-title">Admin Paneli</h1>
+        <p class="admin-subtitle">Sınav yönetim sistemi</p>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row stats-row">
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <i class="fas fa-file-alt stat-icon"></i>
+                <div class="stat-number">@(Model?.Count ?? 0)</div>
+                <div class="stat-label">Toplam Sınav</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <i class="fas fa-clock stat-icon"></i>
+                <div class="stat-number">@(Model?.Count(x => x.Date > DateTime.Now) ?? 0)</div>
+                <div class="stat-label">Bekleyen Sınavlar</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <i class="fas fa-check-circle stat-icon"></i>
+                <div class="stat-number">@(Model?.Count(x => x.Date < DateTime.Now) ?? 0)</div>
+                <div class="stat-label">Tamamlanan Sınavlar</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div>
+            <a href="@Url.Action("Users", "Admin")" class="btn btn-info me-2">
+                <i class="fas fa-users me-2"></i>Kullanıcı Yönetimi
+            </a>
+            <a href="@Url.Action("Index", "Test")" class="btn btn-info me-2">
+                <i class="fas fa-tasks me-2"></i>Test Yönetimi
+            </a>
+            <button type="button" class="btn btn-admin btn-admin-primary" onclick="showCreateModal()">
+                <i class="fas fa-plus me-2"></i>Yeni Sınav Ekle
+            </button>
+        </div>
+    </div>
+
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <div class="alert alert-admin alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Sınav yönetimi için lütfen giriş yapın.</span>
+        </div>
+    }
+
+    <!-- Sınav Listesi -->
+    <div id="examList">
+        @if (Model == null || Model.Count == 0)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle me-2"></i>Henüz sınav eklenmedi!
+            </div>
+        }
+        else
+        {
+            <div class="data-table">
+                <table class="table" id="examTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                            <th><i class="fas fa-heading me-2"></i>Başlık</th>
+                            <th><i class="fas fa-align-left me-2"></i>Açıklama</th>
+                            <th><i class="fas fa-calendar-alt me-2"></i>Tarih</th>
+                            <th><i class="fas fa-cogs me-2"></i>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var exam in Model)
+                        {
+                            <tr data-exam-id="@exam.Id">
+                                <td>@exam.Id</td>
+                                <td>@exam.Title</td>
+                                <td>@exam.Description</td>
+                                <td>@exam.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm me-2" onclick="editExam(@exam.Id)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteExam(@exam.Id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Sınav Ekleme/Düzenleme Modal -->
+<div class="modal fade" id="examModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Yeni Sınav Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="examForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="examId" value="0">
+                    <div class="mb-3">
+                        <label class="form-label">Sınav Adı</label>
+                        <input type="text" class="form-control" id="examTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="examDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tarih</label>
+                        <input type="datetime-local" class="form-control" id="examDate" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveExam()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+    <script>
+        // CSRF token ayarı
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajaxSetup({
+            headers: {
+                'RequestVerificationToken': token
+            }
+        });
+
+        $(document).ready(function() {
+            // Tarih alanı için minimum değer ayarla
+            var today = new Date().toISOString().slice(0, 16);
+            $("#examDate").attr("min", today);
+        });
+
+        // Yeni sınav modalını göster
+        function showCreateModal() {
+            $("#modalTitle").text("Yeni Sınav Ekle");
+            $("#examId").val(0);
+            $("#examForm")[0].reset();
+            var today = new Date().toISOString().slice(0, 16);
+            $("#examDate").val(today);
+            $("#examModal").modal("show");
+        }
+
+        // S��nav düzenleme
+        function editExam(id) {
+            $.get(`/Exam/GetExam/${id}`, function(data) {
+                if (data.success) {
+                    $("#modalTitle").text("Sınavı Düzenle");
+                    $("#examId").val(data.id);
+                    $("#examTitle").val(data.title);
+                    $("#examDescription").val(data.description);
+                    $("#examDate").val(data.date);
+                    $("#examModal").modal("show");
+                } else {
+                    Swal.fire('Hata!', data.message, 'error');
+                }
+            }).fail(function() {
+                Swal.fire('Hata!', 'Sınav bilgileri alınamadı.', 'error');
+            });
+        }
+
+        // Form validasyonu
+        function validateForm() {
+            var title = $("#examTitle").val().trim();
+            var description = $("#examDescription").val().trim();
+            var date = new Date($("#examDate").val());
+            var now = new Date();
+            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0);
+
+            if (!title) {
+                Swal.fire('Hata!', 'Sınav adı boş olamaz.', 'error');
+                return false;
+            }
+
+            if (!description) {
+                Swal.fire('Hata!', 'S��nav açıklaması boş olamaz.', 'error');
+                return false;
+            }
+
+            if (date < today) {
+                Swal.fire('Hata!', 'Sınav tarihi geçmiş bir tarih olamaz.', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Sınav kaydetme
+        function saveExam() {
+            if (!validateForm()) return;
+
+            var exam = {
+                Id: parseInt($("#examId").val()) || 0,
+                Title: $("#examTitle").val().trim(),
+                Description: $("#examDescription").val().trim(),
+                Date: $("#examDate").val()
+            };
+
+            $.ajax({
+                url: "/Exam/SaveExam",
+                type: "POST",
+                data: JSON.stringify(exam),
+                contentType: "application/json",
+                success: function(result) {
+                    if (result.success) {
+                        $("#examModal").modal("hide");
+                        Swal.fire({
+                            title: 'Başarılı!',
+                            text: 'Sınav başarıyla kaydedildi.',
+                            icon: 'success'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Hata!', result.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    var message = xhr.responseJSON ? xhr.responseJSON.message : 'Bir hata oluştu.';
+                    Swal.fire('Hata!', message, 'error');
+                }
+            });
+        }
+
+        // Sınav silme
+        function deleteExam(id) {
+            Swal.fire({
+                title: 'Emin misiniz?',
+                text: "Bu işlem geri alınamaz!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Evet, sil!',
+                cancelButtonText: 'İptal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/Exam/Delete/${id}`,
+                        type: "POST",
+                        success: function(result) {
+                            if (result.success) {
+                                $(`tr[data-exam-id="${id}"]`).fadeOut(400, function() {
+                                    $(this).remove();
+                                    Swal.fire('Silindi!', 'Sınav başarıyla silindi.', 'success');
+                                });
+                            } else {
+                                Swal.fire('Hata!', result.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            var message = xhr.responseJSON ? xhr.responseJSON.message : 'Bir hata oluştu.';
+                            Swal.fire('Hata!', message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

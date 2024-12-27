@@ -1,0 +1,88 @@
+﻿@model deneme135.Models.Exam
+
+@{
+    ViewData["Title"] = "Sınavı Sil";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-lg border-danger">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle fa-2x me-2"></i>
+                        <h3 class="mb-0">Sınavı Silme Onayı</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Bu işlem geri alınamaz! Sınavı silmek istediğinizden emin misiniz?
+                    </div>
+
+                    <div class="exam-details p-4 bg-light rounded mb-4">
+                        <h4 class="text-danger mb-4">Silinecek Sınav Bilgileri:</h4>
+                        
+                        <div class="mb-3">
+                            <label class="fw-bold">
+                                <i class="fas fa-heading me-2"></i>Sınav Adı:
+                            </label>
+                            <p class="lead mb-0">@Model.Title</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold">
+                                <i class="fas fa-align-left me-2"></i>Açıklama:
+                            </label>
+                            <p class="lead mb-0">@Model.Description</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold">
+                                <i class="fas fa-calendar-alt me-2"></i>Sınav Tarihi:
+                            </label>
+                            <p class="lead mb-0">@Model.Date.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                    </div>
+
+                    <form asp-action="Delete" method="post" class="mt-4">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-trash-alt me-2"></i>Sınavı Sil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Silme butonuna tıklandığında son bir onay al
+            $('form').on('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    text: "Bu işlem geri alınamaz!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Evet, Sil!',
+                    cancelButtonText: 'İptal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,182 @@
+@model deneme135.Models.Test
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">@Model.Title</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead mb-4">@Model.Description</p>
+            
+            <form id="testForm">
+                @Html.AntiForgeryToken()
+                <div id="testContent">
+                    <!-- Test içeriği JavaScript ile yüklenecek -->
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="submitTest()">
+                        <i class="fas fa-check me-2"></i>Testi Bitir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+    <script>
+        var testContent = @Html.Raw(Json.Serialize(Model.Content));
+        
+        $(document).ready(function() {
+            // Test içeriğini parse et ve göster
+            try {
+                var questions = JSON.parse(testContent);
+                displayQuestions(questions);
+            } catch (e) {
+                console.error('Test içeriği parse edilemedi:', e);
+                $('#testContent').html('<div class="alert alert-danger">Test içeriği yüklenemedi.</div>');
+            }
+        });
+
+        function displayQuestions(questions) {
+            var html = '';
+            questions.forEach((question, index) => {
+                html += `
+                    <div class="question-container mb-4 p-3 border rounded">
+                        <h5 class="mb-3">${index + 1}. ${question.text}</h5>
+                        <div class="options">
+                            ${question.options.map((option, optIndex) => `
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" 
+                                           name="question_${index}" 
+                                           id="q${index}_opt${optIndex}" 
+                                           value="${optIndex}"
+                                           required>
+                                    <label class="form-check-label" for="q${index}_opt${optIndex}">
+                                        ${option}
+                                    </label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            $('#testContent').html(html);
+
+            // Radio butonlara tıklandığında stil değişikliği
+            $('.form-check-input').change(function() {
+                $(this).closest('.question-container').find('.form-check').removeClass('selected');
+                $(this).closest('.form-check').addClass('selected');
+            });
+        }
+
+        function submitTest() {
+            var answers = [];
+            var totalQuestions = $('.question-container').length;
+            var answeredQuestions = 0;
+
+            $('.question-container').each(function(index) {
+                var selectedOption = $(`input[name="question_${index}"]:checked`).val();
+                if (selectedOption !== undefined) {
+                    answeredQuestions++;
+                }
+                answers.push({
+                    questionIndex: index,
+                    selectedOption: selectedOption ? parseInt(selectedOption) : null
+                });
+            });
+
+            // Boş cevap kontrolü
+            var unansweredCount = totalQuestions - answeredQuestions;
+            if (unansweredCount > 0) {
+                Swal.fire({
+                    title: 'Dikkat!',
+                    text: `${unansweredCount} soruyu cevaplamadınız. Devam etmek istiyor musunuz?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Evet, Bitir',
+                    cancelButtonText: 'Hayır, Devam Et'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        saveTestResults(answers);
+                    }
+                });
+            } else {
+                saveTestResults(answers);
+            }
+        }
+
+        function saveTestResults(answers) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            
+            $.ajax({
+                url: '/Test/SaveTestResult',
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                data: JSON.stringify({
+                    testId: @Model.Id,
+                    answers: answers
+                }),
+                contentType: 'application/json',
+                success: function(result) {
+                    if (result.success) {
+                        Swal.fire({
+                            title: 'Başarılı!',
+                            text: 'Test cevaplarınız kaydedildi.',
+                            icon: 'success'
+                        }).then(() => {
+                            window.location.href = '/Test/StudentTests';
+                        });
+                    } else {
+                        Swal.fire('Hata!', result.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Hata!', 'Test sonuçları kaydedilemedi.', 'error');
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .question-container {
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .question-container:hover {
+            background-color: #e9ecef;
+        }
+
+        .form-check {
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .form-check:hover {
+            background-color: #e2e6ea;
+        }
+
+        .form-check.selected {
+            background-color: #cfe2ff;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            width: 100%;
+            margin-left: 10px;
+        }
+    </style>
+} 

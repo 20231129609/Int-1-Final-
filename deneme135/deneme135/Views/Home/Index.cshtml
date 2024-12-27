@@ -1,0 +1,73 @@
+﻿@using System.Linq
+@model List<deneme135.Models.Exam>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Anasayfa";
+}
+
+<div class="container mt-4">
+    <div class="jumbotron">
+        <h1 class="display-4">Online Sinav Sistemi</h1>
+        <p class="lead">Sinav sistemine hoş geldiniz.</p>
+        <hr class="my-4">
+        
+        @if (!User.Identity.IsAuthenticated)
+        {
+            <p>Sinav sistemini kullanmak için lütfen giriş yapin veya kayit olun.</p>
+            <div>
+                <a class="btn btn-primary" asp-controller="Account" asp-action="Login">
+                    <i class="fas fa-sign-in-alt"></i> Giriş Yap
+                </a>
+                <a class="btn btn-success" asp-controller="Account" asp-action="Register">
+                    <i class="fas fa-user-plus"></i> Kayit Ol
+                </a>
+            </div>
+        }
+        else
+        {
+            @if (User.IsInRole("Admin"))
+            {
+                <p>Sinav yönetimi için admin paneline gidebilirsiniz.</p>
+                <a class="btn btn-primary" asp-controller="Admin" asp-action="Index">
+                    <i class="fas fa-cogs"></i> Admin Paneli
+                </a>
+            }
+            else if (User.IsInRole("Student"))
+            {
+                <p>Mevcut sinavlarinizi görüntüleyebilirsiniz.</p>
+                <div class="mt-4">
+                    @if (Model != null && Model.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Sinav Adi</th>
+                                        <th>Açiklama</th>
+                                        <th>Tarih</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var exam in Model)
+                                    {
+                                        <tr>
+                                            <td>@exam.Title</td>
+                                            <td>@exam.Description</td>
+                                            <td>@exam.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            Henüz sinav bulunmamaktadir.
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>

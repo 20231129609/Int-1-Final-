@@ -1,0 +1,124 @@
+﻿@{
+    ViewData["Title"] = "Kayıt Ol";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Kayıt Ol</h3>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <p class="mb-0">@error.ErrorMessage</p>
+                            }
+                        </div>
+                    }
+
+                    <form asp-action="Register" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Kullanıcı Adı</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Şifre</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Şifre Tekrar</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="role" class="form-label">Kayıt Türü</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                <select id="role" name="role" class="form-control" required>
+                                    <option value="">Seçiniz...</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Student">Öğrenci</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Kayıt Ol
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-3 text-center">
+                        <p class="mb-0">
+                            Zaten hesabınız var mı? 
+                            <a asp-action="Login" class="text-primary">Giriş Yap</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Şifre eşleşme kontrolü
+            $('#confirmPassword').on('keyup', function() {
+                var password = $('#password').val();
+                var confirmPassword = $(this).val();
+                
+                if (password != confirmPassword) {
+                    $(this).addClass('is-invalid').removeClass('is-valid');
+                } else {
+                    $(this).addClass('is-valid').removeClass('is-invalid');
+                }
+            });
+
+            // Form gönderilmeden önce kontrol
+            $('form').on('submit', function(e) {
+                var password = $('#password').val();
+                var confirmPassword = $('#confirmPassword').val();
+                var role = $('#role').val();
+
+                if (!password || !confirmPassword || !role) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: 'Lütfen tüm alanları doldurunuz.',
+                        icon: 'error'
+                    });
+                    return false;
+                }
+
+                if (password != confirmPassword) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: 'Şifreler eşleşmiyor.',
+                        icon: 'error'
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
+}

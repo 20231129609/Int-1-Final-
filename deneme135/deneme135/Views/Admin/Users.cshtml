@@ -1,0 +1,76 @@
+@model List<deneme135.Models.UserViewModel>
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Kullanıcı Yönetimi</h4>
+        </div>
+        <div class="card-body">
+            @Html.AntiForgeryToken()
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı Adı</th>
+                            <th>Rol</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.UserName</td>
+                                <td>
+                                    <select class="form-select" onchange="updateRole('@user.Id', this.value)">
+                                        @if (user.Role == "Student")
+                                        {
+                                            <option value="Student" selected>Öğrenci</option>
+                                            <option value="Admin">Admin</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="Student">Öğrenci</option>
+                                            <option value="Admin" selected>Admin</option>
+                                        }
+                                    </select>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var token = $('input[name="__RequestVerificationToken"]').val();
+
+        function updateRole(userId, newRole) {
+            $.ajax({
+                url: '/Admin/UpdateRole',
+                type: 'POST',
+                data: { userId: userId, newRole: newRole },
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                success: function(result) {
+                    if (result.success) {
+                        Swal.fire('Başarılı!', 'Kullanıcı rolü güncellendi.', 'success');
+                    } else {
+                        Swal.fire('Hata!', result.message || 'Bir hata oluştu.', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Rol güncelleme hatası:', xhr);
+                    Swal.fire('Hata!', 'Bir hata oluştu.', 'error');
+                }
+            });
+        }
+    </script>
+} 

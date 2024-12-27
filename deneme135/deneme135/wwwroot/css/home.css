@@ -1,0 +1,128 @@
+/* Custom styles for homepage */
+.hero-section {
+    background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+    padding: 100px 0;
+    color: white;
+    margin-bottom: 50px;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    animation: fadeInUp 1s ease;
+}
+
+.hero-subtitle {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin-bottom: 30px;
+    animation: fadeInUp 1s ease 0.2s;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    color: #000DFF;
+    margin-bottom: 20px;
+}
+
+.auth-buttons .btn {
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-weight: 600;
+    margin: 0 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #000DFF;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #0000CC;
+    transform: scale(1.05);
+}
+
+.btn-info {
+    background: #6B73FF;
+    border: none;
+}
+
+.btn-info:hover {
+    background: #5158FF;
+    transform: scale(1.05);
+}
+
+.exam-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.exam-table thead {
+    background: #000DFF;
+    color: white;
+}
+
+.exam-table th {
+    font-weight: 600;
+    padding: 15px;
+}
+
+.exam-table td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert {
+    border-radius: 10px;
+    padding: 15px 20px;
+    font-weight: 500;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #000DFF;
+}
+
+.stats-label {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 5px;
+} 

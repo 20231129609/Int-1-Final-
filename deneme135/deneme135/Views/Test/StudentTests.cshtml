@@ -1,0 +1,45 @@
+@model List<deneme135.Models.Test>
+@{
+    ViewData["Title"] = "Testler";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Çözülebilir Testler</h2>
+            
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Henüz çözülebilir test bulunmuyor.
+                </div>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var test in Model)
+                    {
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">@test.Title</h5>
+                                    <p class="card-text">@test.Description</p>
+                                    <div class="text-muted small mb-3">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        Eklenme: @test.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0">
+                                    <a href="@Url.Action("TakeTest", "Test", new { id = test.Id })" class="btn btn-primary w-100">
+                                        <i class="fas fa-pencil-alt me-2"></i>Testi Çöz
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div> 

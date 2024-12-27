@@ -1,0 +1,454 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Test Yönetimi";
+}
+
+@model List<deneme135.Models.Test>
+
+<link rel="stylesheet" href="~/css/admin.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
+
+<div class="admin-container">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <h1 class="admin-title">Test Yönetimi</h1>
+        <p class="admin-subtitle">Test oluşturma ve düzenleme sistemi</p>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row stats-row">
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <i class="fas fa-file-alt stat-icon"></i>
+                <div class="stat-number">@(Model?.Count ?? 0)</div>
+                <div class="stat-label">Toplam Test</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <i class="fas fa-check-circle stat-icon"></i>
+                <div class="stat-number">@(Model?.Count(x => x.IsActive) ?? 0)</div>
+                <div class="stat-label">Aktif Testler</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <i class="fas fa-times-circle stat-icon"></i>
+                <div class="stat-number">@(Model?.Count(x => !x.IsActive) ?? 0)</div>
+                <div class="stat-label">Pasif Testler</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div>
+            <button type="button" class="btn btn-admin btn-admin-primary" onclick="showCreateModal()">
+                <i class="fas fa-plus me-2"></i>Yeni Test Ekle
+            </button>
+        </div>
+    </div>
+
+    <!-- Test Listesi -->
+    <div id="testList">
+        @if (Model == null || Model.Count == 0)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle me-2"></i>Henüz test eklenmedi!
+            </div>
+        }
+        else
+        {
+            <div class="data-table">
+                <table class="table" id="testTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                            <th><i class="fas fa-heading me-2"></i>Başlık</th>
+                            <th><i class="fas fa-align-left me-2"></i>Açıklama</th>
+                            <th><i class="fas fa-calendar-alt me-2"></i>Oluşturma Tarihi</th>
+                            <th><i class="fas fa-toggle-on me-2"></i>Durum</th>
+                            <th><i class="fas fa-cogs me-2"></i>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var test in Model)
+                        {
+                            <tr data-test-id="@test.Id">
+                                <td>@test.Id</td>
+                                <td>@test.Title</td>
+                                <td>@test.Description</td>
+                                <td>@test.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <span class="badge @(test.IsActive ? "bg-success" : "bg-danger")">
+                                        @(test.IsActive ? "Aktif" : "Pasif")
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm me-2" onclick="editTest(@test.Id)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteTest(@test.Id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Test Ekleme/Düzenleme Modal -->
+<div class="modal fade" id="testModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Yeni Test Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="testId" value="0">
+                    <div class="mb-3">
+                        <label class="form-label">Test Adı</label>
+                        <input type="text" class="form-control" id="testTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="testDescription" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Test Soruları</label>
+                        <div id="questionsContainer">
+                            <!-- Sorular buraya dinamik olarak eklenecek -->
+                        </div>
+                        <button type="button" class="btn btn-success mt-3" onclick="addQuestion()">
+                            <i class="fas fa-plus me-2"></i>Yeni Soru Ekle
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="testIsActive" checked>
+                            <label class="form-check-label" for="testIsActive">Test Aktif</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveTest()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+    <script>
+        // CSRF token ayarı
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajaxSetup({
+            headers: {
+                'RequestVerificationToken': token
+            }
+        });
+
+        let questionCounter = 0;
+
+        function addQuestion(question = null) {
+            const questionId = questionCounter++;
+            const questionHtml = `
+                <div class="question-item card mb-3" data-question-id="${questionId}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="card-title mb-0">Soru ${questionId + 1}</h6>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(${questionId})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Soru Metni</label>
+                            <input type="text" class="form-control question-text" value="${question ? question.text : ''}" required>
+                        </div>
+                        <div class="options-container">
+                            ${generateOptionsHtml(question ? question.options : ['', '', '', ''])}
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#questionsContainer').append(questionHtml);
+        }
+
+        function generateOptionsHtml(options) {
+            let html = '';
+            options.forEach((option, index) => {
+                html += `
+                    <div class="mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <input type="radio" name="correct_${questionCounter}" value="${index}" 
+                                       ${index === 0 ? 'checked' : ''}>
+                            </span>
+                            <input type="text" class="form-control option-text" 
+                                   placeholder="Seçenek ${index + 1}" 
+                                   value="${option}" required>
+                            ${options.length > 2 ? `
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="removeOption(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += `
+                <button type="button" class="btn btn-outline-primary btn-sm mt-2" 
+                        onclick="addOption(this)">
+                    <i class="fas fa-plus me-1"></i>Seçenek Ekle
+                </button>
+            `;
+            return html;
+        }
+
+        function addOption(btn) {
+            const optionsContainer = $(btn).closest('.options-container');
+            const questionId = $(btn).closest('.question-item').data('question-id');
+            const optionCount = optionsContainer.find('.option-text').length;
+            
+            const newOption = `
+                <div class="mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <input type="radio" name="correct_${questionId}" value="${optionCount}">
+                        </span>
+                        <input type="text" class="form-control option-text" 
+                               placeholder="Seçenek ${optionCount + 1}" required>
+                        <button type="button" class="btn btn-outline-danger" 
+                                onclick="removeOption(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            $(btn).before(newOption);
+        }
+
+        function removeOption(btn) {
+            const optionsContainer = $(btn).closest('.options-container');
+            if (optionsContainer.find('.option-text').length > 2) {
+                $(btn).closest('.mb-2').remove();
+            } else {
+                Swal.fire('Uyarı', 'En az 2 seçenek olmalıdır.', 'warning');
+            }
+        }
+
+        function removeQuestion(questionId) {
+            const questionsContainer = $('#questionsContainer');
+            if (questionsContainer.children().length > 1) {
+                $(`[data-question-id="${questionId}"]`).remove();
+                updateQuestionNumbers();
+            } else {
+                Swal.fire('Uyarı', 'En az 1 soru olmalıdır.', 'warning');
+            }
+        }
+
+        function updateQuestionNumbers() {
+            $('.question-item').each((index, item) => {
+                $(item).find('.card-title').text(`Soru ${index + 1}`);
+            });
+        }
+
+        // Yeni test modalını göster
+        function showCreateModal() {
+            $("#modalTitle").text("Yeni Test Ekle");
+            $("#testId").val(0);
+            $("#testForm")[0].reset();
+            $("#questionsContainer").empty();
+            $("#testIsActive").prop('checked', true);
+            addQuestion();
+            $("#testModal").modal("show");
+        }
+
+        // Test düzenleme
+        function editTest(id) {
+            $.get(`/Test/GetTest/${id}`, function(data) {
+                if (data.success) {
+                    $("#modalTitle").text("Testi Düzenle");
+                    $("#testId").val(data.id);
+                    $("#testTitle").val(data.title);
+                    $("#testDescription").val(data.description);
+                    $("#testIsActive").prop('checked', data.isActive);
+                    
+                    // Soruları yükle
+                    $("#questionsContainer").empty();
+                    const questions = JSON.parse(data.content);
+                    questions.forEach(question => addQuestion(question));
+                    
+                    $("#testModal").modal("show");
+                } else {
+                    Swal.fire('Hata!', data.message, 'error');
+                }
+            }).fail(function() {
+                Swal.fire('Hata!', 'Test bilgileri alınamadı.', 'error');
+            });
+        }
+
+        // Form validasyonu
+        function validateForm() {
+            var title = $("#testTitle").val().trim();
+            var description = $("#testDescription").val().trim();
+            
+            if (!title) {
+                Swal.fire('Hata!', 'Test adı boş olamaz.', 'error');
+                return false;
+            }
+
+            if (!description) {
+                Swal.fire('Hata!', 'Test açıklaması boş olamaz.', 'error');
+                return false;
+            }
+
+            // Soru ve seçenek kontrolü
+            let isValid = true;
+            $('.question-item').each(function() {
+                const questionText = $(this).find('.question-text').val().trim();
+                if (!questionText) {
+                    Swal.fire('Hata!', 'Soru metni boş olamaz.', 'error');
+                    isValid = false;
+                    return false;
+                }
+
+                const options = $(this).find('.option-text').map(function() {
+                    return $(this).val().trim();
+                }).get();
+
+                if (options.some(opt => !opt)) {
+                    Swal.fire('Hata!', 'Seçenekler boş olamaz.', 'error');
+                    isValid = false;
+                    return false;
+                }
+            });
+
+            return isValid;
+        }
+
+        // Test kaydetme
+        function saveTest() {
+            if (!validateForm()) return;
+
+            const questions = [];
+            $('.question-item').each(function() {
+                const questionId = $(this).data('question-id');
+                const questionText = $(this).find('.question-text').val().trim();
+                const options = $(this).find('.option-text').map(function() {
+                    return $(this).val().trim();
+                }).get();
+
+                questions.push({
+                    text: questionText,
+                    options: options
+                });
+            });
+
+            var test = {
+                Id: parseInt($("#testId").val()) || 0,
+                Title: $("#testTitle").val().trim(),
+                Description: $("#testDescription").val().trim(),
+                Content: JSON.stringify(questions),
+                IsActive: $("#testIsActive").is(":checked")
+            };
+
+            $.ajax({
+                url: "/Test/SaveTest",
+                type: "POST",
+                data: JSON.stringify(test),
+                contentType: "application/json",
+                success: function(result) {
+                    if (result.success) {
+                        $("#testModal").modal("hide");
+                        Swal.fire({
+                            title: 'Başarılı!',
+                            text: 'Test başarıyla kaydedildi.',
+                            icon: 'success'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Hata!', result.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    var message = xhr.responseJSON ? xhr.responseJSON.message : 'Bir hata oluştu.';
+                    Swal.fire('Hata!', message, 'error');
+                }
+            });
+        }
+
+        // Test silme
+        function deleteTest(id) {
+            Swal.fire({
+                title: 'Emin misiniz?',
+                text: "Bu işlem geri alınamaz!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Evet, sil!',
+                cancelButtonText: 'İptal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/Test/Delete/${id}`,
+                        type: "POST",
+                        success: function(result) {
+                            if (result.success) {
+                                $(`tr[data-test-id="${id}"]`).fadeOut(400, function() {
+                                    $(this).remove();
+                                    Swal.fire('Silindi!', 'Test başarıyla silindi.', 'success');
+                                });
+                            } else {
+                                Swal.fire('Hata!', result.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            var message = xhr.responseJSON ? xhr.responseJSON.message : 'Bir hata oluştu.';
+                            Swal.fire('Hata!', message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .question-item {
+            position: relative;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
+
+        .question-item .btn-danger {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .input-group-text {
+            padding: 0.375rem 0.75rem;
+        }
+
+        .input-group-text input[type="radio"] {
+            margin: 0;
+        }
+
+        .option-text {
+            margin-left: -1px;
+        }
+    </style>
+} 
